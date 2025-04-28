@@ -1,45 +1,44 @@
-use cudarc::{
-    driver::{CudaContext, DriverError, LaunchConfig, PushKernelArg},
-    nvrtc::Ptx,
-};
+use cudarc::driver::{CudaDevice, DriverError, LaunchAsync, LaunchConfig};
+use cudarc::nvrtc::compile_ptx;
+
+const SRC: &str = "
+#define N 1000
+extern \"C\" __global__ void add_vectors(float *a, float *b, float *c)
+{
+    int id = blockDim.x * blockIdx.x + threadIdx.x;
+    if(id < N) c[id] = a[id] + b[id];
+}
+";
 
 fn main() -> Result<(), DriverError> {
-    let ctx = CudaContext::new(0)?;
-    let stream = ctx.default_stream();
+    let start = std::time::Instant::now();
+    let ptx = compile_ptx(SRC).unwrap();
+    println!("Compilation succeeded in {:?}", start.elapsed());
 
-    // You can load a function from a pre-compiled PTX like so:
-    let module = ctx.load_module(Ptx::from_src("
-extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < numel) {
-        out[i] = sin(inp[i]);
-    }
-}
-    ")).expect("Can't load module from PTX");
+    let dev = CudaDevice::new(0)?;
+    println!("Built in {:?}", start.elapsed());
 
-    // and then load a function from it:
-    let f = module.load_function("sin_kernel").unwrap();
+    dev.load_ptx(ptx, "add_vectors", &["add_vectors"])?;
+    let f = dev.get_func("add_vectors", "add_vectors").unwrap();
+    println!("Loaded in {:?}", start.elapsed());
 
-    let a_host = [1.0, 2.0, 3.0];
+    let ah = [1.0f32, 10., 150.];
+    let bh = [1.0f32, 10., -50.];
+    let mut ch = [0.0f32; 3];
+    let a_dev = dev.htod_sync_copy(&ah)?;
+    let b_dev = dev.htod_sync_copy(&bh)?;
+    let mut c_dev = dev.htod_sync_copy(&ch)?;
 
-    let a_dev = stream.memcpy_stod(&a_host)?;
-    let mut b_dev = a_dev.clone();
+    println!("Copied in {:?}", start.elapsed());
+    let cfg = LaunchConfig {
+        block_dim: (3, 1, 1),
+        grid_dim: (1, 1, 1),
+        shared_mem_bytes: 0,
+    };
 
-    // we use a buidler pattern to launch kernels.
-    let n = 3i32;
-    let cfg = LaunchConfig::for_num_elems(n as u32);
-    let mut launch_args = stream.launch_builder(&f);
-    launch_args.arg(&mut b_dev);
-    launch_args.arg(&a_dev);
-    launch_args.arg(&n);
-    unsafe { launch_args.launch(cfg) }?;
-
-    let a_host_2 = stream.memcpy_dtov(&a_dev)?;
-    let b_host = stream.memcpy_dtov(&b_dev)?;
-
-    println!("Found {:?}", b_host);
-    println!("Expected {:?}", a_host.map(f32::sin));
-    assert_eq!(&a_host, a_host_2.as_slice());
-
+    let _res = unsafe { f.launch(cfg, (&a_dev, &b_dev, &mut c_dev)) };
+    dev.dtoh_sync_copy_into(&c_dev, &mut ch)?;
+    println!("Adding vectors {:?} and {:?}.", ah, bh);
+    println!("Found {:?} in {:?}", ch, start.elapsed());
     Ok(())
 }
