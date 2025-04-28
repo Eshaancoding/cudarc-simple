@@ -9,7 +9,7 @@ fn main() -> Result<(), DriverError> {
 
     // You can load a function from a pre-compiled PTX like so:
     let module = ctx.load_module(Ptx::from_src("
-extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel) {
+__global__ void sin_kernel(float *out, const float *inp, int numel) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < numel) {
         out[i] = sin(inp[i]);
