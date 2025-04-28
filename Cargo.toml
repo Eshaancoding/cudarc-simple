@@ -1,0 +1,7 @@
+[package]
+name = "simple_cuda_proj"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cudarc = "0.16.2"
