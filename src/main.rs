@@ -15,7 +15,7 @@ extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel)
         out[i] = sin(inp[i]);
     }
 }
-    "));
+    ")).expect("Can't load module from PTX");
 
     // and then load a function from it:
     let f = module.load_function("sin_kernel").unwrap();
