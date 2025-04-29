@@ -15,7 +15,7 @@ fn main() -> Result<(), DriverError> {
 extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < numel) {
-        out[i] = sin(inp[i]);
+        out[i] = inp[i] * 3.0 + 2.0;
     }
 }
     ").expect("Couldn't compile PTX");
@@ -51,7 +51,7 @@ extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel)
 
     // timeit this section -- CPU
     let start_cpu = Instant::now();
-    let res_cpu = a_host.iter().map(|&a| f32::sin(a)).collect::<Vec<f32>>();
+    let res_cpu = a_host.iter().map(|&a| a * 3.0 + 2.0).collect::<Vec<f32>>();
     let elapsed_cpu = start_cpu.elapsed();
 
     println!("Elapsed CUDA: {} ms", elapsed_cuda.as_secs_f64()*1000.0);
