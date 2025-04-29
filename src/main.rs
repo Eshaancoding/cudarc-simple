@@ -1,6 +1,5 @@
 use cudarc::{
     driver::{CudaContext, DriverError, LaunchConfig, PushKernelArg},
-    nvrtc::Ptx,
     nvrtc::compile_ptx
 };
 
