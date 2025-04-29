@@ -26,7 +26,7 @@ extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel)
     let f = module.load_function("sin_kernel").unwrap();
     
     let mut a_host = vec![];
-    for i in 0..1000 {
+    for i in 0..100000 {
         a_host.push((i as f32)/100.0);
     }
 
