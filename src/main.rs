@@ -26,8 +26,8 @@ extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel)
     let f = module.load_function("sin_kernel").unwrap();
     
     let mut a_host = vec![];
-    for i in 0..100 {
-        a_host.push(i as f32);
+    for i in 0..1000 {
+        a_host.push((i as f32)/100);
     }
 
     // we use a buidler pattern to launch kernels.
