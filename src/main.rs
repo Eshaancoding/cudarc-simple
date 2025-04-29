@@ -1,6 +1,7 @@
 use cudarc::{
     driver::{CudaContext, DriverError, LaunchConfig, PushKernelArg},
     nvrtc::Ptx,
+    nvrtc::compile_ptx
 };
 
 fn main() -> Result<(), DriverError> {
@@ -8,14 +9,16 @@ fn main() -> Result<(), DriverError> {
     let stream = ctx.default_stream();
 
     // You can load a function from a pre-compiled PTX like so:
-    let module = ctx.load_module(Ptx::from_src("
-__global__ void sin_kernel(float *out, const float *inp, int numel) {
+    let ptx = compile_ptx("
+extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < numel) {
         out[i] = sin(inp[i]);
     }
 }
-    ")).expect("Can't load module from PTX");
+    ").expect("Couldn't compile PTX");
+
+    let module = ctx.load_module(ptx).expect("Can't load module from PTX");
 
     // and then load a function from it:
     let f = module.load_function("sin_kernel").unwrap();
