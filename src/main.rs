@@ -54,8 +54,8 @@ extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel)
     let res_cpu = a_host.iter().map(|&a| f32::sin(a)).collect::<Vec<f32>>();
     let elapsed_cpu = start_cpu.elapsed();
 
-    println!("Elapsed CUDA: {:?}", elapsed_cuda.as_secs_f64());
-    println!("Elapsed CPU: {:?}", elapsed_cpu.as_secs_f64());
+    println!("Elapsed CUDA: {} ms", elapsed_cuda.as_secs_f64()*1000);
+    println!("Elapsed CPU: {} ms", elapsed_cpu.as_secs_f64()*1000);
 
     Ok(())
 }
