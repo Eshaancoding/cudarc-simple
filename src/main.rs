@@ -45,7 +45,7 @@ extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel)
     let b_host = stream.memcpy_dtov(&b_dev)?;
 
     println!("Found {:?}", b_host);
-    println!("Expected {:?}", a_host.iter().map(|&a| f32::sin(a).collect::Vec<f32>());
+    println!("Expected {:?}", a_host.iter().map(|&a| f32::sin(a).collect::Vec<f32>()));
     // assert_eq!(&a_host, a_host_2.as_slice());
 
     Ok(())
