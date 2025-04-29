@@ -44,14 +44,13 @@ extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel)
     launch_args.arg(&a_dev);
     launch_args.arg(&n);
     unsafe { launch_args.launch(cfg) }?;
-    let a_host_2 = stream.memcpy_dtov(&a_dev)?;
-    let b_host = stream.memcpy_dtov(&b_dev)?;
+    let b_host = stream.memcpy_dtov(&b_dev)?; // get output
 
     let elapsed_cuda = start_cuda.elapsed();
 
     // timeit this section -- CPU
     let start_cpu = Instant::now();
-    let res_cpu = a_host.iter().map(|&a| a * 3.0 + 2.0).collect::<Vec<f32>>();
+    a_host.iter().map(|&a| a * 3.0 + 2.0).collect::<Vec<f32>>(); // perform computation
     let elapsed_cpu = start_cpu.elapsed();
 
     println!("Elapsed CUDA: {} ms", elapsed_cuda.as_secs_f64()*1000.0);
