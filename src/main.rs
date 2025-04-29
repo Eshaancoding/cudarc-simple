@@ -1,4 +1,5 @@
 // test unrolling and the helpfulness of it
+use std::time::Instant;
 
 use cudarc::{
     driver::{CudaContext, DriverError, LaunchConfig, PushKernelArg},
@@ -29,9 +30,6 @@ extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel)
         a_host.push(i as f32);
     }
 
-    let a_dev = stream.memcpy_stod(&a_host)?;
-    let mut b_dev = a_dev.clone(); // launch result kernel
-
     // we use a buidler pattern to launch kernels.
     let n = a_host.len() as i32;
     let cfg = LaunchConfig::for_num_elems(n as u32);
@@ -39,14 +37,25 @@ extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel)
     launch_args.arg(&mut b_dev);
     launch_args.arg(&a_dev);
     launch_args.arg(&n);
-    unsafe { launch_args.launch(cfg) }?;
 
+    // timeit this section -- GPU
+    let start_cuda = Instant::now(); 
+    
+    let a_dev = stream.memcpy_stod(&a_host)?;
+    let mut b_dev = a_dev.clone(); // launch result kernel
+    unsafe { launch_args.launch(cfg) }?;
     let a_host_2 = stream.memcpy_dtov(&a_dev)?;
     let b_host = stream.memcpy_dtov(&b_dev)?;
 
-    println!("Found {:?}", b_host);
-    println!("Expected {:?}", a_host.iter().map(|&a| f32::sin(a)).collect::<Vec<f32>>() );
-    // assert_eq!(&a_host, a_host_2.as_slice());
+    let elapsed_cuda = start_cuda.elapsed();
+
+    // timeit this section -- CPU
+    let start_cpu = Instant::now();
+    let res_cpu = a_host.iter().map(|&a| f32::sin(a)).collect::<Vec<f32>>();
+    let elapsed_cpu = start_cpu.elapsed();
+
+    println!("Elapsed CUDA: {}", elapsed_cuda);
+    println!("Elapsed CPU: {}", elapsed_cpu);
 
     Ok(())
 }
