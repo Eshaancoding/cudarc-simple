@@ -34,15 +34,15 @@ extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel)
     let n = a_host.len() as i32;
     let cfg = LaunchConfig::for_num_elems(n as u32);
     let mut launch_args = stream.launch_builder(&f);
-    launch_args.arg(&mut b_dev);
-    launch_args.arg(&a_dev);
-    launch_args.arg(&n);
 
     // timeit this section -- GPU
     let start_cuda = Instant::now(); 
     
     let a_dev = stream.memcpy_stod(&a_host)?;
     let mut b_dev = a_dev.clone(); // launch result kernel
+    launch_args.arg(&mut b_dev);
+    launch_args.arg(&a_dev);
+    launch_args.arg(&n);
     unsafe { launch_args.launch(cfg) }?;
     let a_host_2 = stream.memcpy_dtov(&a_dev)?;
     let b_host = stream.memcpy_dtov(&b_dev)?;
@@ -54,8 +54,8 @@ extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel)
     let res_cpu = a_host.iter().map(|&a| f32::sin(a)).collect::<Vec<f32>>();
     let elapsed_cpu = start_cpu.elapsed();
 
-    println!("Elapsed CUDA: {}", elapsed_cuda);
-    println!("Elapsed CPU: {}", elapsed_cpu);
+    println!("Elapsed CUDA: {:?}", elapsed_cuda.as_millis());
+    println!("Elapsed CPU: {:?}", elapsed_cpu.as_millis());
 
     Ok(())
 }
