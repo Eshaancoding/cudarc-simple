@@ -24,7 +24,7 @@ extern \"C\" __global__ void sin_kernel(float *out, const float *inp, int numel)
     // and then load a function from it:
     let f = module.load_function("sin_kernel").unwrap();
     
-    let a_host = vec![];
+    let mut a_host = vec![];
     for i in 0..100 {
         a_host.push(i as f32);
     }
